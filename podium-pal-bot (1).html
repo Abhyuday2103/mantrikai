@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Podium Pal — by Mantrik AI</title>
+<style>
+:root{
+  --ink:#120D24; --ink2:#1C1536; --ink3:#251C45;
+  --amber:#FFB627; --amber-soft:#FFD57A;
+  --paper:#F7F3EC; --violet:#7C6CFF; --muted:#A79EC9; --red:#FF6B6B;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--ink);color:var(--paper);min-height:100vh;}
+
+/* header */
+.top{display:flex;align-items:center;gap:14px;padding:18px 26px;border-bottom:1px solid rgba(124,108,255,.25);
+  background:linear-gradient(180deg,#1A1333,var(--ink));position:sticky;top:0;z-index:10;}
+.top svg{flex:0 0 auto;}
+.brand{font-size:24px;font-weight:800;letter-spacing:.01em;}
+.brand .m{color:var(--amber);} .brand .ai{color:var(--violet);}
+.byline{font-size:12px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-top:2px;}
+.live{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.18em;color:var(--red);
+  border:1px solid rgba(255,107,107,.5);border-radius:999px;padding:6px 14px;}
+.live .dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 1.6s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.wrap{max-width:1100px;margin:0 auto;padding:26px 22px 60px;}
+
+/* filters */
+.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:20px;}
+.search{flex:1;min-width:240px;display:flex;align-items:center;gap:10px;background:var(--ink2);
+  border:1.5px solid rgba(124,108,255,.35);border-radius:999px;padding:11px 18px;}
+.search input{flex:1;background:none;border:none;outline:none;color:var(--paper);font-size:15px;}
+.search input::placeholder{color:var(--muted);}
+select{background:var(--ink2);color:var(--paper);border:1.5px solid rgba(124,108,255,.35);
+  border-radius:999px;padding:11px 16px;font-size:14px;outline:none;cursor:pointer;}
+.chipbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;}
+.chip{font-size:13px;border:1px solid rgba(255,182,39,.45);color:var(--amber-soft);border-radius:999px;
+  padding:6px 14px;cursor:pointer;transition:.15s;background:none;}
+.chip:hover,.chip.on{background:var(--amber);color:#1A1204;border-color:var(--amber);}
+
+/* layout */
+.main{display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start;}
+@media(max-width:900px){.main{grid-template-columns:1fr;}}
+
+/* speaker cards */
+.count{font-size:13px;color:var(--muted);margin-bottom:12px;letter-spacing:.08em;text-transform:uppercase;}
+.cards{display:flex;flex-direction:column;gap:16px;}
+.card{background:var(--ink2);border:1.5px solid rgba(124,108,255,.25);border-radius:18px;padding:22px;transition:.15s;}
+.card.hit{border-color:var(--amber);box-shadow:0 0 24px rgba(255,182,39,.12);}
+.card .row1{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+.card h3{font-size:20px;font-weight:800;}
+.loc{font-size:13px;color:var(--muted);}
+.price{margin-left:auto;font-weight:800;color:var(--amber);font-size:15px;white-space:nowrap;}
+.tagline{margin-top:6px;font-size:14.5px;color:var(--muted);line-height:1.45;}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+.tag{font-size:12px;background:rgba(124,108,255,.15);border:1px solid rgba(124,108,255,.4);
+  color:#C7BFFF;border-radius:999px;padding:4px 10px;}
+.tag.mark{background:rgba(255,182,39,.15);border-color:rgba(255,182,39,.55);color:var(--amber-soft);}
+.more{margin-top:14px;font-size:13.5px;color:var(--violet);cursor:pointer;background:none;border:none;font-weight:700;}
+.detail{display:none;margin-top:14px;font-size:14px;line-height:1.55;color:var(--paper);
+  border-top:1px solid rgba(124,108,255,.2);padding-top:14px;}
+.detail.open{display:block;}
+.detail b{color:var(--amber-soft);}
+.detail ul{margin:6px 0 12px 18px;color:var(--muted);}
+.empty{padding:40px;text-align:center;color:var(--muted);border:1.5px dashed rgba(124,108,255,.35);border-radius:18px;}
+.actions{display:flex;gap:10px;margin-top:14px;align-items:center;}
+.bookbtn{background:var(--amber);color:#1A1204;border:none;border-radius:999px;padding:9px 20px;
+  font-weight:800;font-size:13.5px;cursor:pointer;}
+.bookbtn:hover{background:var(--amber-soft);}
+
+/* booking modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(10,7,20,.75);z-index:50;
+  align-items:center;justify-content:center;padding:20px;}
+.overlay.open{display:flex;}
+.modal{background:var(--ink2);border:1.5px solid rgba(255,182,39,.5);border-radius:20px;
+  width:100%;max-width:460px;max-height:90vh;overflow-y:auto;padding:26px;}
+.modal h3{font-size:20px;font-weight:800;margin-bottom:4px;}
+.modal .sub{font-size:13px;color:var(--muted);margin-bottom:18px;}
+.modal label{display:block;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);margin:14px 0 6px;}
+.modal input,.modal select,.modal textarea{width:100%;background:var(--ink);color:var(--paper);
+  border:1.5px solid rgba(124,108,255,.4);border-radius:12px;padding:11px 14px;font-size:14px;
+  outline:none;font-family:inherit;}
+.modal textarea{resize:vertical;min-height:70px;}
+.modal .rowbtns{display:flex;gap:10px;margin-top:22px;}
+.modal .go{flex:1;background:var(--amber);color:#1A1204;border:none;border-radius:999px;
+  padding:13px;font-weight:800;font-size:15px;cursor:pointer;}
+.modal .cancel{background:none;border:1.5px solid rgba(124,108,255,.45);color:var(--muted);
+  border-radius:999px;padding:13px 22px;cursor:pointer;font-size:14px;}
+.confirm{text-align:center;padding:12px 0;}
+.confirm .big{font-size:44px;margin-bottom:10px;}
+.confirm h3{margin-bottom:8px;}
+.confirm p{font-size:14px;color:var(--muted);line-height:1.55;}
+.confirm .ref{display:inline-block;margin:14px 0;font-family:monospace;font-size:16px;
+  background:var(--ink);border:1.5px dashed var(--amber);border-radius:10px;padding:8px 18px;color:var(--amber-soft);}
+
+/* chat */
+.chatbox{background:var(--ink2);border:1.5px solid rgba(255,182,39,.4);border-radius:18px;
+  display:flex;flex-direction:column;height:640px;position:sticky;top:96px;}
+.chathead{padding:16px 18px;border-bottom:1px solid rgba(124,108,255,.25);display:flex;gap:10px;align-items:center;}
+.chathead .t{font-weight:800;font-size:16px;}
+.chathead .s{font-size:12px;color:var(--muted);}
+.msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.msg{max-width:88%;padding:11px 15px;border-radius:15px;font-size:14px;line-height:1.5;white-space:pre-wrap;}
+.msg.bot{background:var(--ink3);border:1px solid rgba(124,108,255,.3);align-self:flex-start;border-bottom-left-radius:4px;}
+.msg.user{background:var(--amber);color:#1A1204;align-self:flex-end;border-bottom-right-radius:4px;font-weight:600;}
+.msg.think{color:var(--muted);font-style:italic;background:none;border:none;padding:4px 15px;}
+.suggest{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px;}
+.suggest button{font-size:12px;border:1px solid rgba(124,108,255,.45);color:#C7BFFF;background:none;
+  border-radius:999px;padding:6px 11px;cursor:pointer;}
+.suggest button:hover{background:var(--violet);color:#fff;}
+.inputrow{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(124,108,255,.25);}
+.inputrow input{flex:1;background:var(--ink);border:1.5px solid rgba(124,108,255,.4);border-radius:999px;
+  padding:11px 16px;color:var(--paper);font-size:14px;outline:none;}
+.inputrow button{background:var(--amber);border:none;border-radius:999px;padding:11px 20px;
+  font-weight:800;color:#1A1204;cursor:pointer;font-size:14px;}
+.inputrow button:disabled{opacity:.5;cursor:default;}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <svg width="46" height="46" viewBox="0 0 120 120"><path d="M88 62 Q104 54 106 38" fill="none" stroke="#FFB627" stroke-width="7" stroke-linecap="round"/><circle cx="106" cy="36" r="7" fill="#FFB627"/><path d="M32 66 Q22 74 24 86" fill="none" stroke="#7C6CFF" stroke-width="7" stroke-linecap="round"/><circle cx="24" cy="87" r="6.5" fill="#7C6CFF"/><path d="M38 44 L82 44 L76 104 L44 104 Z" fill="#7C6CFF"/><path d="M28 40 L92 32 L96 44 L24 50 Z" fill="#FFB627"/><circle cx="52" cy="66" r="4.5" fill="#120D24"/><circle cx="70" cy="66" r="4.5" fill="#120D24"/><circle cx="53.5" cy="64.5" r="1.4" fill="#F7F3EC"/><circle cx="71.5" cy="64.5" r="1.4" fill="#F7F3EC"/><path d="M52 80 Q61 89 70 80" fill="none" stroke="#120D24" stroke-width="4" stroke-linecap="round"/><circle cx="45" cy="75" r="3.5" fill="#FF6B6B" opacity="0.55"/><circle cx="77" cy="75" r="3.5" fill="#FF6B6B" opacity="0.55"/><rect x="44" y="104" width="10" height="6" rx="3" fill="#5B4CE0"/><rect x="66" y="104" width="10" height="6" rx="3" fill="#5B4CE0"/></svg>
+  <div>
+    <div class="brand">Podium <span class="m">Pal</span></div>
+    <div class="byline">by Mantrik AI</div>
+  </div>
+  <div class="live"><span class="dot"></span>NOW LIVE</div>
+</div>
+
+<div class="wrap">
+  <div class="filters">
+    <div class="search">🔎<input id="q" placeholder="Search keywords: sales, AI, fashion, hospitality, entrepreneurship..."></div>
+    <select id="price">
+      <option value="">Any budget</option>
+      <option value="500">Under $500</option>
+      <option value="1000">Under $1,000</option>
+      <option value="2500">Under $2,500</option>
+      <option value="5000">Under $5,000</option>
+    </select>
+    <select id="lang">
+      <option value="">Any language</option>
+      <option>English</option><option>Hindi</option><option>Telugu</option>
+      <option>Gujarati</option><option>Marathi</option>
+    </select>
+  </div>
+  <div class="chipbar" id="chips"></div>
+
+  <div class="main">
+    <div>
+      <div class="count" id="count"></div>
+      <div class="cards" id="cards"></div>
+    </div>
+
+    <div class="chatbox">
+      <div class="chathead">
+        <svg width="30" height="30" viewBox="0 0 120 120"><path d="M38 44 L82 44 L76 104 L44 104 Z" fill="#7C6CFF"/><path d="M28 40 L92 32 L96 44 L24 50 Z" fill="#FFB627"/><circle cx="52" cy="66" r="4.5" fill="#120D24"/><circle cx="70" cy="66" r="4.5" fill="#120D24"/><path d="M52 80 Q61 89 70 80" fill="none" stroke="#120D24" stroke-width="4" stroke-linecap="round"/></svg>
+        <div><div class="t">Ask Podium Pal</div><div class="s">Describe your event — I'll find your speaker</div></div>
+      </div>
+      <div class="msgs" id="msgs">
+        <div class="msg bot">Hey! I'm Podium Pal. Tell me about your event — topic, audience, budget, virtual or in-person — and I'll match you with the right speaker from our founding roster. 🎤</div>
+      </div>
+      <div class="suggest">
+        <button onclick="ask('Entrepreneurship speaker under $500')">Entrepreneurship under $500</button>
+        <button onclick="ask('Someone for a B2B sales kickoff')">B2B sales kickoff</button>
+        <button onclick="ask('AI speaker for college students')">AI for students</button>
+        <button onclick="ask('Interactive fashion workshop')">Fashion workshop</button>
+      </div>
+      <div class="inputrow">
+        <input id="chatin" placeholder="e.g. Hindi-speaking speaker on leadership..." onkeydown="if(event.key==='Enter')send()">
+        <button id="sendbtn" onclick="send()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modalbox"></div>
+</div>
+
+<script>
+const SPEAKERS = [
+{
+  id:"abhi", name:"Abhyuday (Abhi) Priyadarshi", loc:"Chicago, IL", minPrice:1000,
+  priceLabel:"from $1,000",
+  tagline:"From Leaving Home to Leading Home — walked away from a family business in India at 18, grew a dead B2B territory to $1M+, then pivoted to data analytics.",
+  topics:["Earning What Already May Be Yours (family business & ambition)","From Zero to a Million (B2B sales growth)","The Sales to Data Pivot","The Immigrant Playbook (visas, career, identity)","Creative Outlets, Corporate Life (DJing & Hot Wheels)"],
+  keywords:["sales kickoff","SKO","B2B sales","keynote","motivational","data analytics","career pivot","immigrant story","family business succession","MBA speaker","sales leadership","young professionals","storytelling","virtual keynote","bilingual","distribution","building materials","manufacturing"],
+  audience:"College students & international students, B2B sales teams, family business successors, MBA programs",
+  style:"Storytelling-focused and conversational, direct delivery, real sales numbers with personal anecdotes, humor and audience interaction, no jargon or slide-heavy decks.",
+  langs:["English","Hindi"],
+  travel:"Based in Chicago; travels across North America; India for multi-day events; virtual worldwide.",
+  pricing:["Virtual keynote (30–45 min): $1,500","In-person keynote (45–60 min): $3,500 + travel","Half-day workshop (sales/analytics): $6,000","College/student events: $1,000 virtual / $2,000 in person","Panels & fireside chats: $1,200","Family business & succession: $5,000 (premium)"]
+},
+{
+  id:"neelesh", name:"Neelesh Kumar", loc:"India", minPrice:100,
+  priceLabel:"from $100",
+  tagline:"Aspiring F&B entrepreneur building a vision for Indian, Chinese, and fusion cuisine — inspires students and first-time founders to turn ideas into reality.",
+  topics:["My Journey Toward Building an F&B Company","Building a Restaurant Brand in India","Entrepreneurship: Turning Ideas into Reality","Business Planning for First-Time Entrepreneurs","Customer Experience: The Key to Restaurant Success","The Future of Indian, Chinese & Fusion Cuisine"],
+  keywords:["entrepreneurship","business strategy","startup","business planning","food and beverage","F&B","restaurant","food entrepreneurship","leadership","innovation","customer experience","hospitality","Indian cuisine","Chinese cuisine","fusion cuisine","brand building","young entrepreneurs","motivation"],
+  audience:"College & MBA students, hospitality students, young entrepreneurs, startup founders, restaurant owners",
+  style:"Story-driven, interactive and conversational, practical business focus, audience participation, action-oriented takeaways.",
+  langs:["English","Hindi","Telugu"],
+  travel:"Available throughout India; virtual worldwide; open to international opportunities.",
+  pricing:["Virtual engagement (30–60 min): from $100","Colleges & universities: from $150","Startup & community events: from $250","Workshops (2–3 hrs): from $400","Business conferences & corporate: from $500","Special rates for education, nonprofits & youth programs"]
+},
+{
+  id:"divya", name:"Divya", loc:"Charlotte, NC", minPrice:150,
+  priceLabel:"from $150",
+  tagline:"Personal stylist and fashion consultant — signature talk 'Dress Like You': color analysis and body-type styling for all genders, ages, and budgets.",
+  topics:["Dress Like You: Colors, Outfits & Style for Your Body Type (signature)","Color Analysis: Shades That Make You Glow","Office & Professional Outfits","Traditional & Ethnic Wear Styling","Accessories, Jewelry & Shoes","Building a Capsule Wardrobe"],
+  keywords:["fashion","personal styling","stylist","color analysis","body type","office outfits","professional wear","traditional wear","ethnic wear","jewelry","accessories","shoes","wardrobe","capsule wardrobe","confidence","image consulting","personal branding","first impressions","workshop"],
+  audience:"Anyone wanting wardrobe confidence, corporate professionals, students, interview/event prep, community groups — all genders and ages",
+  style:"Highly interactive with live color draping and audience makeovers, warm and confidence-building, storytelling with real client transformations, no fashion jargon.",
+  langs:["English","Telugu","Hindi"],
+  travel:"Based in Charlotte, NC; travels throughout the US; international welcome; virtual available.",
+  pricing:["Personal color analysis: from $150/person","Corporate/office styling: from $250/person","Traditional/occasion styling: from $300/person","Group talks & workshops: from $1,000"]
+},
+{
+  id:"sharad", name:"Sharad Kaushik", loc:"India", minPrice:150,
+  priceLabel:"from $150",
+  tagline:"Hospitality management graduate and AI enthusiast — helps audiences embrace innovation and build human-centered businesses, grounded by a yoga practice.",
+  topics:["The Future of Hospitality in the AI Era","Artificial Intelligence for Beginners","Entrepreneurship & Business Mindset","Customer Experience as a Competitive Advantage","Leadership Lessons from Hospitality","Personal Growth Through Discipline & Yoga"],
+  keywords:["hospitality","AI","artificial intelligence","entrepreneurship","customer experience","innovation","leadership","yoga","mindfulness","growth mindset","continuous learning","technology","human-centered","personal development"],
+  audience:"Colleges & universities, young professionals, aspiring entrepreneurs, startup communities, hospitality professionals, youth leadership programs",
+  style:"Interactive, storytelling-based, practical and actionable, inspirational, engaging Q&A.",
+  langs:["English","Hindi"],
+  travel:"Virtual worldwide; in-person across India; open to international engagements.",
+  pricing:["Virtual (45–60 min): from $150","In-person (India): from $300 + travel","Workshops (2–3 hrs): from $500","Custom programs: on request; special pricing for education, students, startups & nonprofits"]
+},
+{
+  id:"kunal", name:"Kunal Chauhan", loc:"United States", minPrice:500,
+  priceLabel:"from $500",
+  tagline:"'Beyond the Numbers' — Financial Analyst pursuing a Master's in AI & Data Analytics; speaks on data-driven decisions, lifelong learning, and resilience.",
+  topics:["The Future of Finance in the Age of AI","From Finance to AI: Embracing Lifelong Learning","Data-Driven Decision Making","The Power of Staying Alert","Turning Challenges into Opportunities","Technology, Ethics & the Future Workplace"],
+  keywords:["finance","financial analysis","AI","artificial intelligence","data analytics","data-driven","decision making","lifelong learning","resilience","career growth","leadership","corporate","MBA","STEM","professional development"],
+  audience:"Corporate executives, finance & accounting professionals, college/MBA/STEM students, tech startups, young professionals",
+  style:"Storytelling-focused, interactive, practical real-world examples, data-driven with relatable insights, Q&A friendly.",
+  langs:["English","Hindi","Gujarati"],
+  travel:"In-person and virtual; travels throughout the US; available for international conferences.",
+  pricing:["Virtual keynote (30–60 min): $500–$1,000","In-person local events: $1,000–$2,000","US national conferences: $2,500–$5,000 + travel","International: from $5,000 + expenses","Half-day workshops & corporate training: from $3,000","University guest lectures: negotiable/discounted"]
+},
+{
+  id:"manoj", name:"Manoj", loc:"Virtual (from India)", minPrice:300,
+  priceLabel:"from $300",
+  tagline:"Global explorer of Argentina, Indonesia, Germany, Australia and beyond — teaches students how travel, technology, and cross-cultural connection build leaders.",
+  topics:["Technology & AI: Preparing for the Future","Global Politics and Everyday Life","Travel as a Tool for Personal & Professional Growth","International Relations & Cross-Cultural Understanding","Career Readiness for College Students","Leadership, Communication & Critical Thinking"],
+  keywords:["technology","AI","global politics","travel","cross-cultural","international relations","career readiness","college students","leadership","communication","critical thinking","global economy","lifelong learning","virtual"],
+  audience:"College students, universities, student organizations, career development & leadership programs, young professionals",
+  style:"Highly interactive and storytelling-focused; real-life travel experiences, thought-provoking discussion, audience participation.",
+  langs:["English","Telugu","Hindi"],
+  travel:"Virtual only — keynotes, webinars, guest lectures, panels, and workshops online.",
+  pricing:["Virtual keynote (45–60 min): $500","Virtual workshop (60–90 min): $750","College/university guest lecture: $400","Panel or fireside chat: $300","Custom/multi-session programs: from $900"]
+},
+{
+  id:"stavan", name:"Stavan Ravikant", loc:"India (worldwide)", minPrice:2000,
+  priceLabel:"from $2,000",
+  tagline:"Hospitality graduate and aspiring restaurateur on a mission: people-first leadership. 'True hospitality starts with those who serve.'",
+  topics:["Dignity: Redefining Hospitality Through People-First Leadership","The Human Side of Hospitality","Why Employee Experience Drives Guest Experience","Building Hospitality Businesses with Purpose","Leadership Through Empathy","Creating Workplaces Where People Thrive"],
+  keywords:["hospitality","people-first","leadership","employee experience","guest experience","empathy","workplace culture","purpose","HR","human resources","customer experience","service industry","restaurant","dignity"],
+  audience:"Hospitality professionals, hotel & restaurant executives, business owners, HR professionals, leadership conferences, students",
+  style:"Storytelling-driven, authentic, thought-provoking, inspirational, audience-centered with practical insights.",
+  langs:["English","Hindi","Marathi"],
+  travel:"Worldwide — international conferences, corporate events, and virtual keynotes.",
+  pricing:["Keynote (45–60 min): from $5,000","Corporate conferences & summits: from $7,500","University events: from $3,000","Panels & fireside chats: from $2,000","Half-day workshop: from $8,000 / Full-day: from $12,000","Virtual keynote: from $2,500","International: from $10,000 + business-class travel"]
+}
+];
+
+const QUICK_CHIPS = ["entrepreneurship","AI","sales","hospitality","fashion","leadership","finance","students","virtual","Hindi"];
+
+// ---------- rendering ----------
+const cardsEl = document.getElementById('cards');
+const countEl = document.getElementById('count');
+
+function money(n){return '$'+n.toLocaleString();}
+
+function render(list, hits=[]) {
+  cardsEl.innerHTML = '';
+  countEl.textContent = list.length + ' of ' + SPEAKERS.length + ' speakers';
+  if(!list.length){cardsEl.innerHTML = '<div class="empty">No speakers match those filters — try widening the budget or clearing a keyword.</div>';return;}
+  for(const s of list){
+    const d = document.createElement('div');
+    d.className = 'card' + (hits.includes(s.id) ? ' hit' : '');
+    d.innerHTML = `
+      <div class="row1"><h3>${s.name}</h3><span class="loc">📍 ${s.loc}</span><span class="price">${s.priceLabel}</span></div>
+      <div class="tagline">${s.tagline}</div>
+      <div class="tags">${s.keywords.slice(0,7).map(k=>`<span class="tag">${k}</span>`).join('')}
+        ${s.langs.map(l=>`<span class="tag mark">${l}</span>`).join('')}</div>
+      <div class="actions">
+        <button class="bookbtn">Book this speaker →</button>
+        <button class="more">View full profile ▾</button>
+      </div>
+      <div class="detail">
+        <b>Keynote topics</b><ul>${s.topics.map(t=>`<li>${t}</li>`).join('')}</ul>
+        <b>Pricing</b><ul>${s.pricing.map(p=>`<li>${p}</li>`).join('')}</ul>
+        <b>Audience:</b> ${s.audience}<br><br>
+        <b>Style:</b> ${s.style}<br><br>
+        <b>Travel:</b> ${s.travel}
+      </div>`;
+    d.querySelector('.bookbtn').onclick = ()=>openBooking(s);
+    d.querySelector('.more').onclick = (e)=>{
+      const det = d.querySelector('.detail');
+      det.classList.toggle('open');
+      e.target.textContent = det.classList.contains('open') ? 'Hide profile ▴' : 'View full profile ▾';
+    };
+    cardsEl.appendChild(d);
+  }
+}
+
+// ---------- client-side filtering ----------
+function haystack(s){
+  return [s.name,s.loc,s.tagline,s.audience,s.style,s.travel,
+          s.topics.join(' '),s.keywords.join(' '),s.langs.join(' ')].join(' ').toLowerCase();
+}
+function applyFilters(){
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const maxP = document.getElementById('price').value;
+  const lang = document.getElementById('lang').value;
+  let list = SPEAKERS.filter(s=>{
+    if(maxP && s.minPrice > +maxP) return false;
+    if(lang && !s.langs.includes(lang)) return false;
+    if(q){
+      const h = haystack(s);
+      const terms = q.split(/[\s,]+/).filter(Boolean);
+      if(!terms.every(t=>{
+        const esc = t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+        return new RegExp('(^|[^a-z0-9])'+esc,'i').test(h);
+      })) return false;
+    }
+    return true;
+  });
+  render(list);
+}
+document.getElementById('q').addEventListener('input', applyFilters);
+document.getElementById('price').addEventListener('change', applyFilters);
+document.getElementById('lang').addEventListener('change', applyFilters);
+
+// quick chips
+const chipsEl = document.getElementById('chips');
+for(const c of QUICK_CHIPS){
+  const b = document.createElement('button');
+  b.className='chip'; b.textContent=c;
+  b.onclick = ()=>{
+    const box = document.getElementById('q');
+    if(b.classList.contains('on')){b.classList.remove('on'); box.value = box.value.replace(c,'').trim();}
+    else {b.classList.add('on'); box.value = (box.value+' '+c).trim();}
+    applyFilters();
+  };
+  chipsEl.appendChild(b);
+}
+
+// ---------- AI chat ----------
+const msgsEl = document.getElementById('msgs');
+const history = [];
+
+function addMsg(text, cls){
+  const m = document.createElement('div');
+  m.className = 'msg '+cls;
+  m.textContent = text;
+  msgsEl.appendChild(m);
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+  return m;
+}
+
+function ask(t){document.getElementById('chatin').value = t; send();}
+
+// compact DB for the model
+const DB = SPEAKERS.map(s=>({id:s.id,name:s.name,location:s.loc,starting_price_usd:s.minPrice,
+  tagline:s.tagline,topics:s.topics,keywords:s.keywords,audience:s.audience,style:s.style,
+  languages:s.langs,travel:s.travel,pricing:s.pricing}));
+
+const SYSTEM = `You are Podium Pal, the friendly AI concierge of Podium Pal (by Mantrik AI), a speaker bureau. Match user requests to speakers from this database:
+${JSON.stringify(DB)}
+
+Rules:
+- Recommend only speakers from the database. Match on topics, keywords, audience, languages, format (virtual/in-person), location, and budget (starting_price_usd is each speaker's lowest fee; check their pricing list for the specific format requested).
+- If a budget is given, do not recommend speakers whose relevant fee exceeds it. If nobody fits, say so honestly and suggest the closest options or a virtual format as a cheaper alternative.
+- Be warm, concise (2-4 sentences per reply), and conversational. Reference why each pick fits.
+- Ask ONE clarifying question if the request is too vague to match.
+- Respond ONLY with valid JSON, no markdown fences, in this exact shape:
+{"reply":"your conversational reply","speaker_ids":["id1","id2"]}
+speaker_ids may be empty if you're asking a clarifying question or nothing matches.`;
+
+// ---------- local fallback matcher (works without the API, e.g. on GitHub Pages) ----------
+function localMatch(text){
+  const t = text.toLowerCase();
+  // budget extraction: "$500", "under 1000", "1.5k", "budget of 2000"
+  let budget = null;
+  const m = t.match(/\$?\s?(\d[\d,]*(?:\.\d+)?)\s*(k\b)?/g);
+  if(m && /(under|below|less than|max|budget|within|up to|\$)/.test(t)){
+    for(const raw of m){
+      const km = raw.trim().match(/(\d[\d,]*(?:\.\d+)?)\s*(k)?/i);
+      if(km){
+        let v = parseFloat(km[1].replace(/,/g,''));
+        if(km[2]) v *= 1000;
+        if(v >= 50){ budget = budget===null ? v : Math.min(budget,v); }
+      }
+    }
+  }
+  // score by keyword overlap
+  const stop = new Set(['a','an','the','for','on','about','speaker','someone','need','want','with','and','or','in','under','below','less','than','max','budget','event','talk','of','to','my','our','us','me','i','who','can','looking','find']);
+  const terms = t.replace(/[^a-z0-9\s$]/g,' ').split(/\s+/).filter(w=>w && !stop.has(w) && !/^\$?\d/.test(w));
+  const scored = SPEAKERS.map(s=>{
+    const h = haystack(s);
+    let score = 0;
+    for(const w of terms){
+      const esc = w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      if(new RegExp('(^|[^a-z0-9])'+esc,'i').test(h)) score++;
+    }
+    return {s, score};
+  }).filter(x=>x.score>0)
+    .filter(x=>budget===null || x.s.minPrice<=budget)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,3);
+
+  if(!scored.length){
+    const bTxt = budget!==null ? ' within $'+budget.toLocaleString() : '';
+    return {reply:"I couldn't find a strong match"+bTxt+". Try different keywords (e.g. sales, AI, hospitality, fashion, entrepreneurship) or widen the budget — virtual formats are usually the most affordable.", speaker_ids:[]};
+  }
+  const names = scored.map(x=>x.s.name.split(' (')[0]);
+  const bTxt = budget!==null ? ' within your $'+budget.toLocaleString()+' budget' : '';
+  return {reply:"Based on your keywords"+bTxt+", here "+(names.length>1?"are my top matches":"is my top match")+": "+names.join(', ')+". I've highlighted "+(names.length>1?"them":"the profile")+" below — tap 'View full profile' for topics and exact pricing.", speaker_ids: scored.map(x=>x.s.id)};
+}
+
+function showPicks(parsed){
+  if(parsed.speaker_ids && parsed.speaker_ids.length){
+    document.getElementById('q').value=''; document.getElementById('price').value=''; document.getElementById('lang').value='';
+    document.querySelectorAll('.chip.on').forEach(c=>c.classList.remove('on'));
+    const picks = SPEAKERS.filter(s=>parsed.speaker_ids.includes(s.id));
+    const rest = SPEAKERS.filter(s=>!parsed.speaker_ids.includes(s.id));
+    render([...picks,...rest], parsed.speaker_ids);
+    window.scrollTo({top:document.querySelector('.main').offsetTop-80,behavior:'smooth'});
+  } else {
+    // no matches: clear any stale highlights
+    document.querySelectorAll('.card.hit').forEach(c=>c.classList.remove('hit'));
+  }
+}
+
+async function send(){
+  const input = document.getElementById('chatin');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value='';
+  addMsg(text,'user');
+  history.push({role:'user',content:text});
+  const think = addMsg('Matching speakers…','think');
+  document.getElementById('sendbtn').disabled = true;
+
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        system:SYSTEM,
+        messages:history
+      })
+    });
+    if(!res.ok) throw new Error('api unavailable');
+    const data = await res.json();
+    think.remove();
+    const raw = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    let parsed;
+    try{ parsed = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch(e){ parsed = {reply: raw || "Sorry, I hiccuped. Try rephrasing?", speaker_ids:[]}; }
+    addMsg(parsed.reply,'bot');
+    history.push({role:'assistant',content:raw});
+    showPicks(parsed);
+  }catch(err){
+    // graceful degradation: local keyword + budget matcher
+    think.remove();
+    const parsed = localMatch(text);
+    addMsg(parsed.reply,'bot');
+    history.push({role:'assistant',content:JSON.stringify(parsed)});
+    showPicks(parsed);
+  }
+  document.getElementById('sendbtn').disabled = false;
+}
+
+// ---------- booking ----------
+const overlay = document.getElementById('overlay');
+const modalbox = document.getElementById('modalbox');
+overlay.addEventListener('click', e=>{ if(e.target===overlay) closeBooking(); });
+function closeBooking(){ overlay.classList.remove('open'); }
+
+function openBooking(s){
+  const opts = s.pricing.map(p=>`<option>${p}</option>`).join('');
+  modalbox.innerHTML = `
+    <h3>Book ${s.name.split(' (')[0]}</h3>
+    <div class="sub">${s.loc} · ${s.priceLabel} · Final quote confirmed by our team</div>
+    <label>Engagement format & rate</label>
+    <select id="bk_format">${opts}</select>
+    <label>Preferred event date</label>
+    <input type="date" id="bk_date">
+    <label>Your name</label>
+    <input id="bk_name" placeholder="Full name">
+    <label>Email</label>
+    <input type="email" id="bk_email" placeholder="you@company.com">
+    <label>Tell us about your event (optional)</label>
+    <textarea id="bk_notes" placeholder="Audience, venue, topic focus..."></textarea>
+    <div class="rowbtns">
+      <button class="cancel" onclick="closeBooking()">Cancel</button>
+      <button class="go" onclick="submitBooking('${s.id}')">Send booking request</button>
+    </div>`;
+  overlay.classList.add('open');
+}
+
+function submitBooking(id){
+  const s = SPEAKERS.find(x=>x.id===id);
+  const name = document.getElementById('bk_name').value.trim();
+  const email = document.getElementById('bk_email').value.trim();
+  const fmt = document.getElementById('bk_format').value;
+  const date = document.getElementById('bk_date').value;
+  if(!name || !email || !/.+@.+\..+/.test(email)){
+    alert('Please add your name and a valid email so we can confirm the booking.');
+    return;
+  }
+  const ref = 'PP-' + Math.random().toString(36).slice(2,7).toUpperCase();
+  modalbox.innerHTML = `
+    <div class="confirm">
+      <div class="big">🎉</div>
+      <h3>Request received!</h3>
+      <div class="ref">${ref}</div>
+      <p><b style="color:var(--paper)">${s.name.split(' (')[0]}</b> — ${fmt}${date ? '<br>Requested date: '+date : ''}</p>
+      <p style="margin-top:10px">Our team will confirm availability and send a quote to <b style="color:var(--amber-soft)">${email}</b> within 24 hours. No payment is taken until the speaker confirms.</p>
+      <div class="rowbtns"><button class="go" onclick="closeBooking()">Done</button></div>
+    </div>`;
+  addMsg('🎉 Booking request '+ref+' sent for '+s.name.split(' (')[0]+' — '+fmt+'. Our team will follow up at '+email+' within 24 hours.','bot');
+}
+
+// initial render
+render(SPEAKERS);
+</script>
+</body>
+</html>
